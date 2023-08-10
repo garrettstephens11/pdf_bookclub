@@ -46,7 +46,7 @@ def index():
         text = extract_pdf_text(pdf_data)
         tokens = nltk.word_tokenize(text)
         segments = [' '.join(tokens[i:i+2000]) for i in range(0, len(tokens), 2000)]
-        segments = [clean_text(segment) for segment in segments]  # Clean each segment
+        segments = [clean_text(segment) for segment in segments]
         enumerated_segments = list(enumerate(segments))
         return render_template('result.html', segments=enumerated_segments, discussions=session.get('discussions'))
 
@@ -58,9 +58,14 @@ def generate():
     index = request.form.get('index')
     segment = request.form.get('segment')
 
-    logging.info(f'Generating for index: {index}, segment: {segment[:100]}')
-
-    prompt = "Can you generate for me a short book club discussion between three people about the following section of a book: {}. This discussion should address the book club question: 'What is a random word or phrase that for some reason stood out to you in reading this text? What does that word or phrase bring to mind for you? Then, relate your own thought back to the passage's message.'".format(segment)
+    prompt = """
+    Can you generate for me a short book club discussion between three people about the following section of a book: {}. 
+    The discussion should be formatted as follows:
+    Person A: [Person A's comment]
+    Person B: [Person B's comment]
+    Person C: [Person C's comment]
+    This discussion should address the book club question: 'What is a random word or phrase that stood out to you in reading this text? What does that word or phrase bring to mind for you? Then, relate your thought back to the passage's message.'
+    """.format(segment)
 
     response = openai.ChatCompletion.create(
         model="gpt-4",
@@ -71,6 +76,8 @@ def generate():
     )
 
     discussion = response.choices[0].message['content']
+
+    logging.info(f"Raw discussion output: {discussion}")
 
     if 'discussions' not in session:
         session['discussions'] = {}
