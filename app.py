@@ -1,22 +1,29 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+import os
 import openai
-import fitz  # PyMuPDF
+import fitz
 import re
-from nltk.tokenize import word_tokenize, sent_tokenize
-import os  # Import the os module
+import nltk
+from flask import Flask, render_template, request, session, jsonify
+import logging
 
 app = Flask(__name__)
 
-# Get your secret key from an environment variable
 app.secret_key = os.getenv('SECRET_KEY')
 
-# Set OpenAI settings from environment variables
 openai.organization = os.getenv('OPENAI_ORG_ID')
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
+logging.basicConfig(level=logging.INFO)
+
 def clean_text(text):
-    # Replace multiple whitespaces, newlines, and tabs with a single space
     cleaned_text = re.sub(r'\s+', ' ', text)
+    # Remove spaces before punctuation marks
+    cleaned_text = re.sub(r' \.', '.', cleaned_text)
+    cleaned_text = re.sub(r' ,', ',', cleaned_text)
+    cleaned_text = re.sub(r' !', '!', cleaned_text)
+    cleaned_text = re.sub(r' \?', '?', cleaned_text)
+    cleaned_text = re.sub(r' ;', ';', cleaned_text)
+    cleaned_text = re.sub(r' :', ':', cleaned_text)
     return cleaned_text
 
 def extract_pdf_text(pdf_data):
@@ -25,16 +32,9 @@ def extract_pdf_text(pdf_data):
     for page in doc:
         text += page.get_text()
 
-    # Split the text into sentences
-    sentences = sent_tokenize(text)
-
-    # Group every 5 sentences into a paragraph
+    sentences = nltk.sent_tokenize(text)
     paragraphs = [' '.join(sentences[i:i+5]) for i in range(0, len(sentences), 5)]
-
-    # Join the paragraphs with two newlines between each
     text = '\n\n'.join(paragraphs)
-
-    # Remove extra spaces before periods
     text = text.replace(' .', '.')
 
     return clean_text(text)
@@ -43,31 +43,25 @@ def extract_pdf_text(pdf_data):
 def index():
     if request.method == 'POST':
         pdf_data = request.files['pdf_file'].read()
-
         text = extract_pdf_text(pdf_data)
-        tokens = word_tokenize(text)
-        segments = [' '.join(tokens[i:i+2000]) for i in range(0, len(tokens), 2000)]  # Reduced to 2000 words
-
-        # Enumerate the segments before passing to the template
+        tokens = nltk.word_tokenize(text)
+        segments = [' '.join(tokens[i:i+2000]) for i in range(0, len(tokens), 2000)]
+        segments = [clean_text(segment) for segment in segments]  # Clean each segment
         enumerated_segments = list(enumerate(segments))
-
         return render_template('result.html', segments=enumerated_segments, discussions=session.get('discussions'))
 
-    # Clear the 'discussions' session data when the route is accessed with a GET request
     session.pop('discussions', None)
-
     return render_template('index.html')
 
 @app.route('/generate', methods=['POST'])
 def generate():
     index = request.form.get('index')
     segment = request.form.get('segment')
-    print(f'Generating for index: {index}, segment: {segment[:100]}...')  # Print the first 100 characters of the segment for brevity
 
-    # Construct the prompt
+    logging.info(f'Generating for index: {index}, segment: {segment[:100]}')
+
     prompt = "Can you generate for me a short book club discussion between three people about the following section of a book: {}. This discussion should address the book club question: 'What is a random word or phrase that for some reason stood out to you in reading this text? What does that word or phrase bring to mind for you? Then, relate your own thought back to the passage's message.'".format(segment)
 
-    # Generate the discussion
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
@@ -78,14 +72,16 @@ def generate():
 
     discussion = response.choices[0].message['content']
 
-    # Store the discussion in the session so it can be accessed in the index route
     if 'discussions' not in session:
         session['discussions'] = {}
-    session['discussions'][str(index)] = discussion
-    print(f'Sessions after generation:  {session["discussions"]}')
+    if str(index) not in session['discussions']:
+        session['discussions'][str(index)] = []
 
-    # Return the discussion as a JSON response
+    session['discussions'][str(index)].append(discussion)
+
+    logging.info(f'Sessions after generation:  {session["discussions"]}')
+
     return jsonify(discussion=discussion)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)

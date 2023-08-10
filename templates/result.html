@@ -12,6 +12,14 @@
                 var form = button.parent();
                 var segmentDiv = button.closest('.segment');
                 
+                // Check if a discussion container already exists
+                var discussionContainer = segmentDiv.find('.discussion-container');
+
+                if (discussionContainer.length === 0) {
+                    segmentDiv.append('<div class="discussion-container"><h3>Discussion</h3></div>');
+                    discussionContainer = segmentDiv.find('.discussion-container');
+                }
+
                 $.ajax({
                     type: form.attr('method'),
                     url: form.attr('action'),
@@ -23,11 +31,9 @@
                             .replace(/Person B:/g, '</p><p><strong>Person B:</strong>')
                             .replace(/Person C:/g, '</p><p><strong>Person C:</strong>')
                             .substring(4) + '</p>';  // Remove the leading '</p>'
-
-                        // Add the discussion to the page
-                        segmentDiv.append('<h3>Discussion</h3>' + formattedDiscussion);
-                        // Disable the button to prevent re-generating the discussion
-                        button.prop('disabled', true);
+                        
+                        // Add the discussion to the container
+                        discussionContainer.append(formattedDiscussion);
                     },
                     error: function(error){
                         console.log(error);
@@ -52,8 +58,12 @@
             </form>
 
             {% if discussions and index|string in discussions %}
-                <h3>Discussion</h3>
-                <p>{{ discussions[index|string] }}</p>
+                <div class="discussion-container">
+                    <h3>Discussion</h3>
+                    {% for disc in discussions[index|string] %}
+                        <p>{{ disc }}</p>
+                    {% endfor %}
+                </div>
             {% endif %}
         </div>
     {% endfor %}
