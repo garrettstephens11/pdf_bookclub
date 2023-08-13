@@ -4,7 +4,7 @@
     <title>PDF Book Club</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <style>
-                p {
+        p {
             text-indent: 2em;
         }
 
@@ -49,26 +49,36 @@
             margin: 20px;
             background-color: #f4f4f4;
         }
+
         h1 {
             text-align: center;
         }
+
         .segment {
             background-color: #fff;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
+
         .discussion-container {
             background-color: #e2f4fa;
             padding: 10px;
             margin-top: 20px;
         }
+
         form {
             margin-bottom: 20px;
         }
+
         strong {
-    font-weight: bold;
-}
+            font-weight: bold;
+        }
+
+        .highlighted {
+            background-color: #c2e0f4; /* Light blue color for highlighting */
+            padding: 2px;
+        }
     </style>
 </head>
 <body>
@@ -80,7 +90,8 @@
 
             <form method="POST" action="{{ url_for('format_text') }}">
                 <input type="hidden" name="segment" value="{{ segment }}">
-                <input type="button" class="format-text" value="Format Text">
+                <input type="button" class="format-text" value="Format Text (~3 minutes)">
+                <input type="button" class="format-text-rough" value="Format Text (rough)">
             </form>
 
             <p>{{ segment.replace('\n', '<br>')|safe }}</p>
@@ -88,9 +99,9 @@
             <form method="POST" action="{{ url_for('generate') }}">
                 <input type="hidden" name="index" value="{{ index }}">
                 <input type="hidden" name="segment" value="{{ segment }}">
+                <input type="button" class="generate-discussion" value="Generate Discussion">
                 <label for="relation_text">[Optional] relate the passage to:</label>
                 <input type="text" name="relation_text" placeholder="Your input here...">
-                <input type="button" class="generate-discussion" value="Generate Discussion">
             </form>
 
             {% if discussions and index|string in discussions %}
@@ -106,35 +117,150 @@
 
     <script>
         $(document).ready(function() {
-    $(".generate-discussion").click(function(){
-        var form = $(this).closest('form');
-        $.post(form.attr("action"), form.serialize())
-        .done(function(data){
-            // Format the returned discussion
-            var formattedDiscussion = data.discussion.replace(/(Person [ABC]:)/g, "<br><strong>$1</strong><br>");
+            $(".generate-discussion").click(function(){
+                var form = $(this).closest('form');
+                $.post(form.attr("action"), form.serialize())
+                .done(function(data){
+                    var formattedDiscussion = data.discussion.replace(/(Person [ABC]:)/g, "<br><strong>$1</strong><br>");
+                    if (form.closest('.segment').find('.discussion-container').length === 0) {
+                        form.closest('.segment').append('<div class="discussion-container"><h3>Discussion</h3></div>');
+                    }
+                    form.closest('.segment').find('.discussion-container').append('<p>' + formattedDiscussion + '</p>');
+                })
+                .fail(function(jqXHR, textStatus, errorThrown){
+                    alert("Failed to generate discussion: " + errorThrown);
+                });
+            });
             
-            if (form.closest('.segment').find('.discussion-container').length === 0) {
-                form.closest('.segment').append('<div class="discussion-container"><h3>Discussion</h3></div>');
-            }
-            
-            form.closest('.segment').find('.discussion-container').append('<p>' + formattedDiscussion + '</p>');
-        })
-        .fail(function(jqXHR, textStatus, errorThrown){
-            alert("Failed to generate discussion: " + errorThrown);
-        });
-    });
-        
-    $(".format-text").click(function(){
-        var form = $(this).closest('form');
-        $.post(form.attr("action"), form.serialize())
-        .done(function(data){
-            form.closest('.segment').find('p').html(data.formatted_text.replace(/\n/g, '<br>'));
-        })
-        .fail(function(jqXHR, textStatus, errorThrown){
-            alert("Failed to format text: " + errorThrown);
-        });
-    });
+            $(".format-text").click(function(){
+                var form = $(this).closest('form');
+                $.post(form.attr("action"), form.serialize())
+                .done(function(data){
+                    form.closest('.segment').find('p').html(data.formatted_text.replace(/\n/g, '<br>'));
+                })
+                .fail(function(jqXHR, textStatus, errorThrown){
+                    alert("Failed to format text: " + errorThrown);
+                });
+            });
+
+            $(".format-text-rough").click(function(){
+                var segment = $(this).closest('form').find('input[name="segment"]').val();
+                var sentences = segment.split('. ');
+                var formattedSegment = '';
+                for(var i = 0; i < sentences.length; i++) {
+                    formattedSegment += sentences[i];
+                    if((i + 1) % 5 == 0 && i != sentences.length - 1) {
+                        formattedSegment += '.<br><br>';
+                    } else if (i != sentences.length - 1) {
+                        formattedSegment += '. ';
+                    }
+                }
+                $(this).closest('.segment').find('p').html(formattedSegment);
+            });
+
+            var currentHighlightedIndex = -1;
+    var currentSegmentElement = null;  // Track the current segment we are highlighting in
+
+    function highlightSentence(segmentElement) {
+        var sentences = segmentElement.html().split('. ');
+        for (var i = 0; i < sentences.length; i++) {
+            sentences[i] = '<span class="sentence">' + sentences[i] + '.</span> ';
+        }
+        segmentElement.html(sentences.join(''));
+    }
+
+    function moveToNextSentence() {
+        if (!currentSegmentElement) return;  // If there's no segment selected, do nothing
+
+        var sentences = currentSegmentElement.find('.sentence');
+        if (currentHighlightedIndex >= 0) {
+            $(sentences[currentHighlightedIndex]).removeClass('highlighted');
+        }
+        currentHighlightedIndex++;
+        if (currentHighlightedIndex < sentences.length) {
+            $(sentences[currentHighlightedIndex]).addClass('highlighted');
+        } else {
+            currentHighlightedIndex = -1;
+        }
+    }
+
+    function removeHyphenation(text) {
+    return text.replace(/-\s*/g, "");
+}
+
+    function adjustSpacesAfterBrackets(text) {
+    // Remove spaces after opening parenthesis
+    text = text.replace(/\( /g, "(");
+    
+    // Remove spaces before closing parenthesis
+    text = text.replace(/ \)/g, ")");
+    
+    // Remove spaces after opening square bracket
+    text = text.replace(/\[ /g, "[");
+    
+    // Remove spaces before closing square bracket
+    text = text.replace(/ \]/g, "]");
+    
+    return text;
+}
+
+function adjustQuotationMarks(text) {
+    // Remove spaces after opening straight quotation marks
+    text = text.replace(/`` /g, "``");
+    
+    // Remove spaces before closing straight quotation marks
+    text = text.replace(/ ''/g, "''");
+    
+    // Remove spaces after opening curly quotation marks
+    text = text.replace(/“ /g, "“");
+    
+    // Remove spaces before closing curly quotation marks
+    text = text.replace(/ ”/g, "”");
+    
+    return text;
+}
+
+$(".format-text-rough").click(function() {
+    var segment = $(this).closest('form').find('input[name="segment"]').val();
+    
+    // Remove hyphenation
+    segment = removeHyphenation(segment);
+    
+    // Adjust quotation marks
+    segment = adjustQuotationMarks(segment);
+    
+    // Adjust spaces after brackets
+    segment = adjustSpacesAfterBrackets(segment);
+    
+    var sentences = segment.split('. ');
+    var formattedSegment = '';
+    for(var i = 0; i < sentences.length; i++) {
+        formattedSegment += sentences[i];
+        if((i + 1) % 5 == 0 && i != sentences.length - 1) {
+            formattedSegment += '.<br><br>';
+        } else if (i != sentences.length - 1) {
+            formattedSegment += '. ';
+        }
+    }
+    $(this).closest('.segment').find('p').html(formattedSegment);
 });
+
+
+$(".format-text, .format-text-rough").click(function() {
+    currentSegmentElement = $(this).closest('.segment').find('p');
+    currentHighlightedIndex = -1;  // Reset the highlighted index
+    highlightSentence(currentSegmentElement);
+    moveToNextSentence();  // Automatically highlight the first sentence
+});
+
+$(document).keydown(function(e) {
+    if (e.keyCode == 39) {  // Right Arrow Key
+        moveToNextSentence();
+    }
+});
+
+});
+
 
     </script>
 </body>

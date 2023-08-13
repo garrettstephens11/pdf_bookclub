@@ -105,5 +105,21 @@ def format_text():
     logging.info(f"Formatted text output: {formatted_text}")
     return jsonify(formatted_text=formatted_text)
 
+@app.route('/format_rough', methods=['POST'])
+def format_text_rough():
+    segment = request.form.get('segment')
+    
+    sentences = segment.split('.')
+    rough_formatted_text = ''
+    
+    for i in range(len(sentences)):
+        rough_formatted_text += sentences[i].strip() + '.'
+        if (i + 1) % 3 == 0 and i < len(sentences) - 1:  # every third sentence
+            rough_formatted_text += '<br>'
+    
+    logging.info(f"Rough formatted text output: {rough_formatted_text}")
+    return jsonify(formatted_text=rough_formatted_text)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
