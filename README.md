@@ -34,7 +34,7 @@ Replace the values inside the angle brackets <> with your actual saved values.
 2. Create a directory/folder for the project using:
    `mkdir pdf_bookclub_folder`
 3. Navigate into the directory you just created:
-   `cd pdf_bookclub_folder`
+   `cd pdf_bookclub`
 4. Clone the git repository: 
    `git clone git@github.com:garrettstephens11/pdf_bookclub.git`
 
@@ -63,7 +63,7 @@ Replace `[other libraries]` with any other dependencies you need.
 ---- USING THE WEB APP ----
 
 1. In your terminal, navigate to the directory of the project:
-   `cd path_to_directory/pdf_bookclub_folder`
+   `cd path_to_directory/pdf_bookclub`
 2. Run:
    `python3 app.py`
 
