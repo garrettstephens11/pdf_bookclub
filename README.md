@@ -32,7 +32,7 @@ Replace the values inside the angle brackets <> with your actual saved values.
 
 1. Open your terminal.
 2. Create a directory/folder for the project using:
-   `mkdir pdf_bookclub_folder`
+   `mkdir pdf_bookclub`
 3. Navigate into the directory you just created:
    `cd pdf_bookclub`
 4. Clone the git repository: 
