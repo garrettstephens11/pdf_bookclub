@@ -3,45 +3,73 @@
 <head>
     <title>PDF Book Club</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            $(".generate-discussion").click(function(event){
-                event.preventDefault();
+    <style>
+                p {
+            text-indent: 2em;
+        }
 
-                var button = $(this);
-                var form = button.parent();
-                var segmentDiv = button.closest('.segment');
-                
-                // Check if a discussion container already exists
-                var discussionContainer = segmentDiv.find('.discussion-container');
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
 
-                if (discussionContainer.length === 0) {
-                    segmentDiv.append('<div class="discussion-container"><h3>Discussion</h3></div>');
-                    discussionContainer = segmentDiv.find('.discussion-container');
-                }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-                $.ajax({
-                    type: form.attr('method'),
-                    url: form.attr('action'),
-                    data: form.serialize(),
-                    success: function(response){
-                        // Format the discussion
-                        var formattedDiscussion = response.discussion
-                            .replace(/Person A:/g, '</p><p><strong>Person A:</strong>')
-                            .replace(/Person B:/g, '</p><p><strong>Person B:</strong>')
-                            .replace(/Person C:/g, '</p><p><strong>Person C:</strong>')
-                            .substring(4) + '</p>';  // Remove the leading '</p>'
-                        
-                        // Add the discussion to the container
-                        discussionContainer.append(formattedDiscussion);
-                    },
-                    error: function(error){
-                        console.log(error);
-                    }
-                });
-            });
-        });
-    </script>
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .loading-bar {
+            background-color: #f3f3f3;
+            border-radius: 3px;
+            height: 10px;
+            width: 100%;
+            position: relative;
+            margin-top: 5px;
+        }
+
+        .loading-bar-fill {
+            background-color: #3498db;
+            border-radius: 3px;
+            height: 100%;
+            width: 0;
+            transition: width 135s;  /* Adjust the speed of the loading bar here */
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        .segment {
+            background-color: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .discussion-container {
+            background-color: #e2f4fa;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        strong {
+    font-weight: bold;
+}
+    </style>
 </head>
 <body>
     <h1>PDF Book Club</h1>
@@ -49,11 +77,19 @@
     {% for index, segment in segments %}
         <div class="segment">
             <h2>Segment {{ index + 1 }}</h2>
+
+            <form method="POST" action="{{ url_for('format_text') }}">
+                <input type="hidden" name="segment" value="{{ segment }}">
+                <input type="button" class="format-text" value="Format Text">
+            </form>
+
             <p>{{ segment.replace('\n', '<br>')|safe }}</p>
 
             <form method="POST" action="{{ url_for('generate') }}">
                 <input type="hidden" name="index" value="{{ index }}">
                 <input type="hidden" name="segment" value="{{ segment }}">
+                <label for="relation_text">[Optional] relate the passage to:</label>
+                <input type="text" name="relation_text" placeholder="Your input here...">
                 <input type="button" class="generate-discussion" value="Generate Discussion">
             </form>
 
@@ -67,5 +103,39 @@
             {% endif %}
         </div>
     {% endfor %}
+
+    <script>
+        $(document).ready(function() {
+    $(".generate-discussion").click(function(){
+        var form = $(this).closest('form');
+        $.post(form.attr("action"), form.serialize())
+        .done(function(data){
+            // Format the returned discussion
+            var formattedDiscussion = data.discussion.replace(/(Person [ABC]:)/g, "<br><strong>$1</strong><br>");
+            
+            if (form.closest('.segment').find('.discussion-container').length === 0) {
+                form.closest('.segment').append('<div class="discussion-container"><h3>Discussion</h3></div>');
+            }
+            
+            form.closest('.segment').find('.discussion-container').append('<p>' + formattedDiscussion + '</p>');
+        })
+        .fail(function(jqXHR, textStatus, errorThrown){
+            alert("Failed to generate discussion: " + errorThrown);
+        });
+    });
+        
+    $(".format-text").click(function(){
+        var form = $(this).closest('form');
+        $.post(form.attr("action"), form.serialize())
+        .done(function(data){
+            form.closest('.segment').find('p').html(data.formatted_text.replace(/\n/g, '<br>'));
+        })
+        .fail(function(jqXHR, textStatus, errorThrown){
+            alert("Failed to format text: " + errorThrown);
+        });
+    });
+});
+
+    </script>
 </body>
 </html>

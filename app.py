@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.INFO)
 
 def clean_text(text):
     cleaned_text = re.sub(r'\s+', ' ', text)
-    # Remove spaces before punctuation marks
     cleaned_text = re.sub(r' \.', '.', cleaned_text)
     cleaned_text = re.sub(r' ,', ',', cleaned_text)
     cleaned_text = re.sub(r' !', '!', cleaned_text)
@@ -31,12 +30,10 @@ def extract_pdf_text(pdf_data):
     text = ""
     for page in doc:
         text += page.get_text()
-
     sentences = nltk.sent_tokenize(text)
     paragraphs = [' '.join(sentences[i:i+5]) for i in range(0, len(sentences), 5)]
     text = '\n\n'.join(paragraphs)
     text = text.replace(' .', '.')
-
     return clean_text(text)
 
 @app.route('/', methods=['GET', 'POST'])
@@ -49,7 +46,6 @@ def index():
         segments = [clean_text(segment) for segment in segments]
         enumerated_segments = list(enumerate(segments))
         return render_template('result.html', segments=enumerated_segments, discussions=session.get('discussions'))
-
     session.pop('discussions', None)
     return render_template('index.html')
 
@@ -57,38 +53,57 @@ def index():
 def generate():
     index = request.form.get('index')
     segment = request.form.get('segment')
-
+    relation_text = request.form.get('relation_text')
+    
     prompt = """
-    Can you generate for me a short book club discussion between three people about the following section of a book: {}. 
+    Can you generate for me a short book club discussion between three people about the following section of a book: {}.
     The discussion should be formatted as follows:
     Person A: [Person A's comment]
     Person B: [Person B's comment]
     Person C: [Person C's comment]
     This discussion should address the book club question: 'What is a random word or phrase that stood out to you in reading this text? What does that word or phrase bring to mind for you? Then, relate your thought back to the passage's message.'
     """.format(segment)
+    
+    if relation_text:
+        prompt += " Next, have the group participants relate the reading to {}.".format(relation_text)
 
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model="gpt-4-0613",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt},
         ],
     )
-
+    
     discussion = response.choices[0].message['content']
-
     logging.info(f"Raw discussion output: {discussion}")
-
+    
     if 'discussions' not in session:
         session['discussions'] = {}
     if str(index) not in session['discussions']:
         session['discussions'][str(index)] = []
-
     session['discussions'][str(index)].append(discussion)
-
     logging.info(f'Sessions after generation:  {session["discussions"]}')
-
     return jsonify(discussion=discussion)
+
+@app.route('/format', methods=['POST'])
+def format_text():
+    segment = request.form.get('segment')
+    prompt = """
+    Given the following text segment, please format it with somewhat better indentation, spacing, and paragraph structuring to make it have slightly better spacing. Please do not add any additional titles or headers to the existing text when you do this. Ensure headers are distinct, lists are organized, and paragraphs are clearly separated:
+    {}
+    """.format(segment)
+    
+    response = openai.ChatCompletion.create(
+        model="gpt-4-0613",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt},
+        ],
+    )
+    formatted_text = response.choices[0].message['content']
+    logging.info(f"Formatted text output: {formatted_text}")
+    return jsonify(formatted_text=formatted_text)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
