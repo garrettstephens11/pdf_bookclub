@@ -99,14 +99,6 @@ Follow the given steps in the terminal:
 
 You should see "Everything up-to-date".
 
-# My Project Name
-
-Description of your project goes here.
-
-## Installation Guide
-
-Follow these steps to set up the project on your local machine.
-
 ### Installing Python (if you don't already have it)
 
 #### For Windows:
