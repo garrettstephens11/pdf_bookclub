@@ -8,7 +8,8 @@ This project is under the GNU General Public License. This means you can use, mo
 
 ## Setting Up OpenAI API Account 
 
-(This app is pay-as-you-use, charged to your OpenAI API Account, but it's pretty darn cheap. It will end up costing you roughly $.08 per book club discussion generated, paid to OpenAI, but again it is pay-as-you-use, so do not be worried about being surprise-charged a lump-sum to start using it). You will be able to track your spend in your "usage" tab in your OpenAI API account.)
+
+note. (This app is pay-as-you-use, charged to your OpenAI API Account, but it's pretty darn cheap. It will end up costing you roughly $.08 per book club discussion generated, paid to OpenAI, but again it is pay-as-you-use, so do not be worried about being surprise-charged a lump-sum to start using it). You will be able to track your spend in your "usage" tab in your OpenAI API account.)
 
 1. **Create an OpenAI Account**: If you don't have an OpenAI account, go to [OpenAI's signup page](https://beta.openai.com/signup/) and create an account.
 
