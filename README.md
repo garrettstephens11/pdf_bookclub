@@ -40,7 +40,30 @@ export OPENAI_ORG_ID=<YourOrgID>
 
 Replace the values inside the angle brackets <> with your actual saved values.
 
-## SETTING UP THE LOCAL REPOSITORY
+## VERSION 1 - DOWNLOAD THE CODE MANUALLY FROM GITHUB
+
+1. Visit the webpage in your browser
+   
+https://github.com/garrettstephens11/pdf_bookclub
+
+2. Download the code
+
+Click on the green "Code" button and download the .zip file. Find it in your downloads folder and "expand" the .zip. Find the folder "pdf_bookclub-main" and move it into the "home" directory on your computer. 
+
+3. Navigate to the directory in your terminal
+
+Open your terminal/command line on your computer. Check to see if you correctly placed the directory "pdf_bookclub-main" in your "home directory". Run the following command in your terminal, and you should see pdf_bookclub-main somewhere in the list.
+
+ ```
+   ls pdf_bookclub-main
+   ```
+If you see it in the list, you can now run the following in your terminal/command line
+
+ ```
+   cd pdf_bookclub-main
+   ```
+
+## VERSION 2 - CLONING THE REPOSITORY FROM GITHUB / SETTING UP THE LOCAL REPOSITORY
 
 1. Open your terminal.
 
@@ -59,9 +82,7 @@ Replace the values inside the angle brackets <> with your actual saved values.
    git clone git@github.com:garrettstephens11/pdf_bookclub.git
    ```
 
-If you encounter git issues, please visit https://chat.openai.com for assistance.
-
-## VERIFYING GIT SETUP
+If you encounter git issues, please visit https://chat.openai.com for assistance. You can copy and paste terminal outputs as errors into ChatGPT and it will tell you what went wrong and tell you what to do to solve it. 
 
 Follow the given steps in the terminal:
 
@@ -78,21 +99,81 @@ Follow the given steps in the terminal:
 
 You should see "Everything up-to-date".
 
-## INSTALLING DEPENDENCIES
+# My Project Name
 
-Depending on your OS:
+Description of your project goes here.
 
-**Windows:**
+## Installation Guide
+
+Follow these steps to set up the project on your local machine.
+
+### Installing Python (if you don't already have it)
+
+#### For Windows:
+
+1. Download the latest Python installer from [python.org](https://www.python.org/downloads/windows/).
+2. Run the installer. Make sure to check the box that says "Add Python to PATH" before clicking on "Install Now."
+
+#### For MacOS:
+
+1. You can use Homebrew to install Python:
+    ```bash
+    brew install python3
+    ```
+   Or download it from [python.org](https://www.python.org/downloads/mac-osx/).
+
+#### For Linux:
+
+1. Most Linux distributions come with Python pre-installed. If not, you can install it using the package manager. 
+
+    For Ubuntu and Debian:
+    ```bash
+    sudo apt-get update
+    sudo apt-get install python3
+    ```
+    
+    For Fedora:
+    ```bash
+    sudo dnf install python3
+    ```
+
+#### Verifying Python Installation:
+
+To verify that Python is installed, open a new terminal window and run:
+```bash
+python3 --version
 ```
-pip install Flask [other libraries]
+You should see the Python version displayed.
+
+### Installing Pip (if not installed)
+
+Python 3.x usually comes with `pip3` pre-installed. To check if `pip3` is available:
+```bash
+pip3 --version
 ```
 
-**MacOS/Linux:**
+If it's not installed, you can install it as follows:
+
+#### MacOS/Linux:
+```bash
+sudo apt install python3-pip  # Debian/Ubuntu
 ```
-pip3 install Flask [other libraries]
+or
+```bash
+sudo dnf install python3-pip  # Fedora
 ```
 
-Replace `[other libraries]` with any other dependencies you need.
+#### Windows:
+Pip is usually installed with Python on Windows.
+
+
+## INSTALLING DEPENDENCIES (do this even if you already have Python installed)
+
+
+After Python and Pip are installed, you can install other required packages using `pip`:
+```bash
+pip install -r requirements.txt
+```
 
 ## USING THE WEB APP
 
