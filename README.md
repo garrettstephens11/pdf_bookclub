@@ -55,7 +55,7 @@ Open your shell terminal and run the following command:
 openssl rand -hex 16
 ```
 
-This will generate a 32-character long hexadecimal secret key. Copy this key.
+This will generate a 32-character long hexadecimal secret key. Copy this key. Save it to a file called 'secret.txt' on your home directory (at least, this is what I have done, so if you choose to save it in a different way, I simply can't verify the app will work, but maybe it will!)
 
 #### Using Environment Variables
 
