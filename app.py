@@ -5,7 +5,6 @@ import re
 import nltk
 from flask import Flask, render_template, request, session, jsonify
 import logging
-import elevenlabs
 
 app = Flask(__name__)
 
