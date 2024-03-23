@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -79,6 +80,18 @@
             background-color: #c2e0f4; /* Light blue color for highlighting */
             padding: 2px;
         }
+        .sentence-discussion {
+    display: inline;
+}
+        .discussion-highlighted {
+    background-color: #a8c8e4; /* Slightly darker blue color for highlighting discussion text */
+    padding: 2px;
+}
+
+.copy-to-clipboard {
+    cursor: pointer;
+}
+
     </style>
 </head>
 <body>
@@ -88,11 +101,14 @@
         <div class="segment">
             <h2>Segment {{ index + 1 }}</h2>
 
-            <form method="POST" action="{{ url_for('format_text') }}">
+            <form method="POST">
                 <input type="hidden" name="segment" value="{{ segment }}">
-                <input type="button" class="format-text" value="Format Text (~3 minutes)">
                 <input type="button" class="format-text-rough" value="Format Text (rough)">
             </form>
+
+            <!-- Inside the segment div, below the Format Text (rough) button -->
+            <input type="button" class="copy-to-clipboard" value="Copy to Clipboard" style="display:none;">
+
 
             <p>{{ segment.replace('\n', '<br>')|safe }}</p>
 
@@ -105,43 +121,46 @@
             </form>
 
             {% if discussions and index|string in discussions %}
-                <div class="discussion-container">
-                    <h3>Discussion</h3>
-                    {% for disc in discussions[index|string] %}
-                        <p>{{ disc }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
+    <div class="discussion-container">
+        <h3>Discussion</h3>
+        <!-- The new "Copy to Clipboard" button for discussions -->
+        <input type="button" class="copy-to-discussion-clipboard" value="Copy to Clipboard">
+        {% for disc in discussions[index|string] %}
+            <p>{{ disc }}</p>
+        {% endfor %}
+    </div>
+{% endif %}
+
         </div>
     {% endfor %}
 
     <script>
         $(document).ready(function() {
             $(".generate-discussion").click(function(){
-                var form = $(this).closest('form');
-                $.post(form.attr("action"), form.serialize())
-                .done(function(data){
-                    var formattedDiscussion = data.discussion.replace(/(Person [ABC]:)/g, "<br><strong>$1</strong><br>");
-                    if (form.closest('.segment').find('.discussion-container').length === 0) {
-                        form.closest('.segment').append('<div class="discussion-container"><h3>Discussion</h3></div>');
-                    }
-                    form.closest('.segment').find('.discussion-container').append('<p>' + formattedDiscussion + '</p>');
-                })
-                .fail(function(jqXHR, textStatus, errorThrown){
-                    alert("Failed to generate discussion: " + errorThrown);
-                });
-            });
-            
-            $(".format-text").click(function(){
-                var form = $(this).closest('form');
-                $.post(form.attr("action"), form.serialize())
-                .done(function(data){
-                    form.closest('.segment').find('p').html(data.formatted_text.replace(/\n/g, '<br>'));
-                })
-                .fail(function(jqXHR, textStatus, errorThrown){
-                    alert("Failed to format text: " + errorThrown);
-                });
-            });
+    var form = $(this).closest('form');
+    $.post(form.attr("action"), form.serialize())
+    .done(function(data){
+        var formattedDiscussion = data.discussion.replace(/(Person [ABC]:)/g, "<br><strong>$1</strong><br>");
+        if (form.closest('.segment').find('.discussion-container').length === 0) {
+            form.closest('.segment').append('<div class="discussion-container"><h3>Discussion</h3></div>');
+        }
+        var discussionContainer = form.closest('.segment').find('.discussion-container');
+        discussionContainer.append('<p>' + formattedDiscussion + '</p>');
+     
+        // Call the highlightDiscussionSentence function here
+        var discussionElement = discussionContainer.last().find('p');
+        highlightDiscussionSentence(discussionElement);
+        currentSegmentElement = discussionElement; // Update the current segment to the discussion
+        currentHighlightedIndex = -1; // Reset the highlighted index
+        moveToNextSentence(); // Automatically highlight the first sentence
+        discussionContainer.find('.copy-to-discussion-clipboard').show();
+
+    })
+    .fail(function(jqXHR, textStatus, errorThrown){
+        alert("Failed to generate discussion: " + errorThrown);
+
+    });
+});
 
             $(".format-text-rough").click(function(){
                 var segment = $(this).closest('form').find('input[name="segment"]').val();
@@ -170,19 +189,25 @@
     }
 
     function moveToNextSentence() {
-        if (!currentSegmentElement) return;  // If there's no segment selected, do nothing
+    if (!currentSegmentElement) return;  // If there's no segment selected, do nothing
 
-        var sentences = currentSegmentElement.find('.sentence');
-        if (currentHighlightedIndex >= 0) {
-            $(sentences[currentHighlightedIndex]).removeClass('highlighted');
-        }
-        currentHighlightedIndex++;
-        if (currentHighlightedIndex < sentences.length) {
-            $(sentences[currentHighlightedIndex]).addClass('highlighted');
-        } else {
-            currentHighlightedIndex = -1;
-        }
+    // Check if the current segment is a discussion or a regular segment
+    var sentenceClass = currentSegmentElement.find('.sentence').length > 0 ? '.sentence' : '.sentence-discussion';
+    var highlightClass = sentenceClass === '.sentence' ? 'highlighted' : 'discussion-highlighted';
+
+    var sentences = currentSegmentElement.find(sentenceClass);
+    if (currentHighlightedIndex >= 0) {
+        $(sentences[currentHighlightedIndex]).removeClass(highlightClass);
     }
+    currentHighlightedIndex++;
+    if (currentHighlightedIndex < sentences.length) {
+        $(sentences[currentHighlightedIndex]).addClass(highlightClass);
+    } else {
+        currentHighlightedIndex = -1;
+    }
+}
+
+
 
     function removeHyphenation(text) {
     return text.replace(/-\s*/g, "");
@@ -220,6 +245,14 @@ function adjustQuotationMarks(text) {
     return text;
 }
 
+function highlightDiscussionSentence(discussionElement) {
+    var sentences = discussionElement.html().split('.');
+    for (var i = 0; i < sentences.length; i++) {
+        sentences[i] = '<span class="sentence-discussion">' + sentences[i] + '.</span> ';
+    }
+    discussionElement.html(sentences.join(''));
+}
+
 $(".format-text-rough").click(function() {
     var segment = $(this).closest('form').find('input[name="segment"]').val();
     
@@ -243,21 +276,100 @@ $(".format-text-rough").click(function() {
         }
     }
     $(this).closest('.segment').find('p').html(formattedSegment);
+
+    // Show the Copy to Clipboard button
+    $(this).closest('.segment').find('.copy-to-clipboard').show();
+});
+
+$(".copy-to-clipboard").click(function() {
+    // Get the formatted segment element
+    var segmentElement = $(this).closest('.segment').find('p');
+    
+    // Initialize a variable to hold the plain text
+    var formattedText = '';
+    
+    // Initialize a variable to track whether the current position is at the beginning of a paragraph
+    var newParagraph = true;
+    
+    // Iterate over the child nodes of the segment element
+    segmentElement.contents().each(function() {
+        if (this.nodeType === 3) { // Text node
+            if (newParagraph) {
+                // Add four regular spaces at the beginning of a new paragraph
+                formattedText += '  ';
+                newParagraph = false;
+            }
+            formattedText += this.nodeValue;
+        } else if (this.nodeType === 1) { // HTML element
+            var tagName = this.tagName.toLowerCase();
+            if (tagName === 'br') {
+                formattedText += '\n';
+                if (formattedText.endsWith('\n\n')) {
+                    // Set the flag to true if a double newline character is encountered
+                    newParagraph = true;
+                }
+            } else if (tagName === 'span') {
+                formattedText += $(this).text(); // Append the text content of the span element
+            }
+        }
+    });
+    
+    // Create a temporary textarea element to copy the text
+    var textarea = document.createElement("textarea");
+    textarea.value = formattedText;
+    document.body.appendChild(textarea);
+    
+    // Select and copy the text in the textarea
+    textarea.select();
+    document.execCommand('copy');
+    
+    // Remove the temporary textarea element
+    document.body.removeChild(textarea);
+    
+    // Optionally, show a message that the text has been copied
+    alert("Text copied to clipboard!");
 });
 
 
-$(".format-text, .format-text-rough").click(function() {
+
+
+
+    $(".format-text-rough").click(function() {
     currentSegmentElement = $(this).closest('.segment').find('p');
     currentHighlightedIndex = -1;  // Reset the highlighted index
     highlightSentence(currentSegmentElement);
     moveToNextSentence();  // Automatically highlight the first sentence
-});
+        });
 
-$(document).keydown(function(e) {
+    $(document).keydown(function(e) {
     if (e.keyCode == 39) {  // Right Arrow Key
         moveToNextSentence();
     }
 });
+        $(".copy-to-discussion-clipboard").click(function() {
+    var discussionElement = $(this).closest('.discussion-container');
+    var discussionText = '';
+    
+    discussionElement.find('p').each(function() {
+        discussionText += $(this).text() + '\n\n';
+    });
+
+    // Create a temporary textarea element to copy the text
+    var textarea = document.createElement("textarea");
+    textarea.value = discussionText.trim();
+    document.body.appendChild(textarea);
+    
+    // Select and copy the text in the textarea
+    textarea.select();
+    document.execCommand('copy');
+    
+    // Remove the temporary textarea element
+    document.body.removeChild(textarea);
+    
+    // Optionally, show a message that the text has been copied
+    alert("Discussion copied to clipboard!");
+});
+
 
 });
 

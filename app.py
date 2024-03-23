@@ -5,6 +5,7 @@ import re
 import nltk
 from flask import Flask, render_template, request, session, jsonify
 import logging
+import elevenlabs
 
 app = Flask(__name__)
 
@@ -61,14 +62,14 @@ def generate():
     Person A: [Person A's comment]
     Person B: [Person B's comment]
     Person C: [Person C's comment]
-    This discussion should address the book club question: 'What is a random word or phrase that stood out to you in reading this text? What does that word or phrase bring to mind for you? Then, relate your thought back to the passage's message.'
+    This discussion should involve at least two "turns" per discussion participant in this discussion. The discussion should address the book club question: 'What is a random word or phrase that stood out to you in reading this text? What does that word or phrase bring to mind for you? Then, relate your thought back to the passage's message.'
     """.format(segment)
     
     if relation_text:
         prompt += " Next, have the group participants relate the reading to {}.".format(relation_text)
 
     response = openai.ChatCompletion.create(
-        model="gpt-4-0613",
+        model="gpt-4-turbo-preview",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt},
@@ -86,25 +87,6 @@ def generate():
     logging.info(f'Sessions after generation:  {session["discussions"]}')
     return jsonify(discussion=discussion)
 
-@app.route('/format', methods=['POST'])
-def format_text():
-    segment = request.form.get('segment')
-    prompt = """
-    Given the following text segment, please format it with somewhat better indentation, spacing, and paragraph structuring to make it have slightly better spacing. Please do not add any additional titles or headers to the existing text when you do this. Ensure headers are distinct, lists are organized, and paragraphs are clearly separated:
-    {}
-    """.format(segment)
-    
-    response = openai.ChatCompletion.create(
-        model="gpt-4-0613",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt},
-        ],
-    )
-    formatted_text = response.choices[0].message['content']
-    logging.info(f"Formatted text output: {formatted_text}")
-    return jsonify(formatted_text=formatted_text)
-
 @app.route('/format_rough', methods=['POST'])
 def format_text_rough():
     segment = request.form.get('segment')
@@ -120,6 +102,5 @@ def format_text_rough():
     logging.info(f"Rough formatted text output: {rough_formatted_text}")
     return jsonify(formatted_text=rough_formatted_text)
 
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 4000)))
