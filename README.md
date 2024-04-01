@@ -145,6 +145,22 @@ Next, we will generate and store what is called a "secret key" for your access t
    ```
    pip install -r requirements.txt
    ```
+3. Get nltk and punkt set up
+    ```
+   pip install nltk
+   ```
+4. Then start a python session
+   ```
+   python3
+   ```
+5. Then for punkt...
+   ```
+   import nltk
+   nltk.download('punkt')
+   ```
+6. This will open the NLTK Downloader, a graphical interface that might appear in a new window depending on your system settings. If it doesn't open a GUI, it will run in the terminal. From there, it will download the punkt package, which includes a pre-trained tokenizer for several languages.
+
+   Exit Python Shell: After the download is complete, you can exit the Python shell by typing exit() or pressing Ctrl+D.
    
 ## STEP 6 - ENVIRONMENT VARIABLES
 
