@@ -195,6 +195,10 @@ If you go to the bottom of any Segment, and click the "generate discussion" butt
 
 This Flask/Jinja web app lets users upload a PDF. Upon upload, the PDF's text is segmented by token number. Each segment has a "generate discussion" button which uses OpenAI's ChatGPT-4 API to stimulate a discussion based on that segment. Note: Clicking "generate discussion" is estimated to cost ~$0.10 per generation from your API account.
 
-Users can also relate passages to their terms using an input box. The "format text ~3" button sends segments to OpenAI's ChatGPT-4 for reformatting, which costs ~$0.10. The "format text (rough)" option doesn't use the API and is free. After selecting "format text (rough)", sentences are highlighted for readability. The right arrow key lets users navigate these sentences.
+Users can also relate passages to their terms using an input box. You can do things such as (1) copy and paste a segment of the text if you want your Bookclub partners to relate their discussion primarily to that section, or type in custom things to have your Bookclub partners draw parallels between the words you input and the segment of text they've read.
+
+### Blue Cursor
+
+The blue cursor appears when you click "format text (rough)" and is meant to help you keep track of where you are while you read. Now, when you go and click, "generate discussion" a new blue cursor appears in the text that displays the Bookclub discussion. That is now the cursor that your right arrow key is controlling. So if you ever notice the blue cursor stopped working, it is almost always because you've generated a new blue cursor somewhere else on the webpage. 
 
 Enjoy PDF Book Club!
